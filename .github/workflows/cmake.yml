@@ -1,0 +1,76 @@
+---
+name: CI
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - .github/workflows/cmake.yml
+  pull_request:
+
+env:
+  DEPENDENCIES_DEBIAN: gstreamer1.0-libav gstreamer1.0-plugins-bad libglib2.0-dev libgmock-dev libgstreamer-plugins-bad1.0-dev libgstreamer1.0-0 libgstreamer1.0-dev libgtest-dev libopencv-dev libopencv-contrib-cuda-dev libpoco-dev libpocofoundation80 meson ninja-build nvidia-cuda-toolkit rapidjson-dev
+  PRE_COMMAND: |
+    set -ex
+    echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries
+    apt-get update \
+      && DEBIAN_FRONTEND=noninteractive \
+      TZ=Etc/UTC \
+      apt-get install -y --no-install-recommends \
+          ca-certificates \
+          gnupg2 \
+          zlib1g-dev \
+          liblzma-dev \
+          sudo \
+          software-properties-common \
+          wget \
+      && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ED7108895311FB59 \
+      && wget https://download.opensuse.org/repositories/home:/jayvdb:/debian/Debian_11/Release.key \
+      && apt-key add Release.key \
+      && ls /etc/apt/sources.list.d/ \
+      && echo deb http://ppa.launchpad.net/jayvdb/experimental/ubuntu jammy main >> /etc/apt/sources.list.d/ppas.list \
+      && echo deb http://download.opensuse.org/repositories/home:/jayvdb:/debian/Debian_11 ./ >> /etc/apt/sources.list.d/obs.list \
+      && cat /etc/apt/sources.list \
+      && echo deb http://deb.debian.org/debian bullseye main contrib non-free > /etc/apt/sources.list \
+      && echo deb http://deb.debian.org/debian bullseye-updates main contrib non-free >> /etc/apt/sources.list
+      sudo apt-mark hold zlib1g-dev liblzma-dev
+
+jobs:
+  # Regular C++ build with two compilers, using the environment:
+  build_using_compiler_in_environment:
+    strategy:
+      matrix:
+        compiler:
+          # [clang, clang++]
+          - [gcc, g++]
+    runs-on: ubuntu-latest
+    env:
+      CC: ${{ matrix.compiler[0] }}
+      CXX: ${{ matrix.compiler[1] }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: jayvdb/ghaction-cmake@meson
+        with:
+          working-directory: gst-plugins-cuda
+          pre_command: ${{ env.PRE_COMMAND }}
+          dependencies_debian: ${{ env.DEPENDENCIES_DEBIAN }}
+
+  test-gcc-sanitize:
+    strategy:
+      matrix:
+        preset:
+          - gcc-sanitize-address #failing # Mixins pointer-compare & pointer-subtract
+          # gcc-sanitize-thread
+          # gcc-sanitize-leak failing
+          # gcc-sanitize-undefined  # Mixins shift, integer-divide-by-zero, unreachable, vla-bound, null, return, signed-integer-overflow, bounds, bounds-strict, alignment, ...
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: jayvdb/ghaction-cmake@meson2
+        with:
+          working-directory: gst-plugins-cuda
+          pre_command: ${{ env.PRE_COMMAND }}
+          dependencies_debian: ${{ env.DEPENDENCIES_DEBIAN }}
+          preset: ${{ matrix.preset }}
