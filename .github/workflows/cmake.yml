@@ -3,8 +3,6 @@ name: CI
 
 on:
   push:
-    branches:
-      - 'main'
     paths:
       - .github/workflows/cmake.yml
   pull_request:
@@ -44,7 +42,7 @@ jobs:
         compiler:
           # [clang, clang++]
           - [gcc, g++]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, v2-build]
     env:
       CC: ${{ matrix.compiler[0] }}
       CXX: ${{ matrix.compiler[1] }}
@@ -65,7 +63,7 @@ jobs:
           # gcc-sanitize-leak failing
           # gcc-sanitize-undefined  # Mixins shift, integer-divide-by-zero, unreachable, vla-bound, null, return, signed-integer-overflow, bounds, bounds-strict, alignment, ...
 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, v2-build]
     steps:
       - uses: actions/checkout@v2
       - uses: jayvdb/ghaction-cmake@meson2
