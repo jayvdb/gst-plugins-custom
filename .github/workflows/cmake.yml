@@ -8,6 +8,7 @@ on:
   pull_request:
 
 env:
+  NVIDIA_DOCKER_ARGS: --gpus=all --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -e NVIDIA_DRIVER_CAPABILITIES=all
   DEPENDENCIES_DEBIAN: gstreamer1.0-libav gstreamer1.0-plugins-bad libglib2.0-dev libgmock-dev libgstreamer-plugins-bad1.0-dev libgstreamer1.0-0 libgstreamer1.0-dev libgtest-dev libopencv-dev libopencv-contrib-cuda-dev libpoco-dev libpocofoundation80 meson ninja-build nvidia-cuda-toolkit rapidjson-dev
   PRE_COMMAND: |
     set -ex
@@ -35,8 +36,10 @@ env:
       sudo apt-mark hold zlib1g-dev liblzma-dev
 
 jobs:
+
   # Regular C++ build with two compilers, using the environment:
   build_using_compiler_in_environment:
+    if: ${{ false }}  # disable for now
     strategy:
       matrix:
         compiler:
@@ -58,6 +61,7 @@ jobs:
           dependencies_debian: ${{ env.DEPENDENCIES_DEBIAN }}
 
   test-gcc-sanitize:
+    if: ${{ false }}  # disable for now
     strategy:
       matrix:
         preset:
