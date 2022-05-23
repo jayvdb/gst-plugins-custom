@@ -47,6 +47,9 @@ jobs:
       CC: ${{ matrix.compiler[0] }}
       CXX: ${{ matrix.compiler[1] }}
     steps:
+      - name: Clean
+        run: sudo rm -rf gst-plugins-cuda
+
       - uses: actions/checkout@v2
       - uses: jayvdb/ghaction-cmake@meson
         with:
@@ -65,6 +68,9 @@ jobs:
 
     runs-on: [self-hosted, linux, x64, v2-build]
     steps:
+      - name: Clean
+        run: sudo rm -rf gst-plugins-cuda
+
       - uses: actions/checkout@v2
       - uses: jayvdb/ghaction-cmake@meson2
         with:
